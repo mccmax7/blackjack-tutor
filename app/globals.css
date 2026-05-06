@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply h-full;
+  }
+  body {
+    @apply bg-felt-dark text-emerald-50 antialiased;
+  }
+}
+
+@layer utilities {
+  .felt {
+    background:
+      radial-gradient(
+        ellipse at center,
+        rgba(255, 255, 255, 0.08) 0%,
+        transparent 60%
+      ),
+      linear-gradient(180deg, #0e7a44 0%, #074a28 100%);
+  }
+}
