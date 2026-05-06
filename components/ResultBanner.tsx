@@ -1,67 +1,62 @@
-import type { GameStatus } from "@/types";
+export type BannerTone = "win" | "loss" | "push" | "blackjack";
 
 interface Props {
-  status: GameStatus;
-  delta?: number; // net change to bankroll for this hand (can be negative)
+  show: boolean;
+  message?: string;
+  tone?: BannerTone;
+  delta?: number; // net change to bankroll (can be negative)
 }
 
-export function ResultBanner({ status, delta }: Props) {
-  const message = messageFor(status);
-  if (!message) {
-    return <div className="h-14" aria-hidden />;
+export function ResultBanner({ show, message, tone, delta }: Props) {
+  if (!show || !message) {
+    return <div className="h-20" aria-hidden />;
   }
+  const toneClasses = toneFor(tone);
+  const showDelta = typeof delta === "number" && delta !== 0;
+  const positive = (delta ?? 0) > 0;
+  const isBJ = tone === "blackjack";
   return (
     <div
-      key={status + (delta ?? 0)}
+      key={(tone ?? "neutral") + (delta ?? 0)}
       role="status"
-      className={`banner-pop-in h-14 grid place-items-center rounded-xl px-4 text-xl font-bold tracking-wide ${toneFor(status)}`}
+      className={`banner-pop-in min-h-20 flex flex-col items-center justify-center gap-1 rounded-xl px-4 py-2 ${toneClasses.banner}`}
     >
-      <span className="flex items-baseline gap-3">
-        <span>{message}</span>
-        {typeof delta === "number" && delta !== 0 && (
-          <span className="text-base tabular-nums opacity-90">
-            {delta > 0 ? `+$${delta}` : `-$${Math.abs(delta)}`}
-          </span>
-        )}
-      </span>
+      <span className="text-xl font-bold tracking-wide">{message}</span>
+      {showDelta && (
+        <span
+          data-flight-source
+          className={`delta-pop text-4xl md:text-5xl font-extrabold tabular-nums drop-shadow ${toneClasses.delta} ${isBJ ? "animate-pulse" : ""}`}
+        >
+          {positive ? `+$${delta}` : `-$${Math.abs(delta as number)}`}
+        </span>
+      )}
     </div>
   );
 }
 
-function messageFor(status: GameStatus): string | null {
-  switch (status) {
-    case "player-blackjack":
-      return "Blackjack! You win.";
-    case "dealer-blackjack":
-      return "Dealer has blackjack. You lose.";
-    case "player-bust":
-      return "Bust. You lose.";
-    case "dealer-bust":
-      return "Dealer busts. You win!";
-    case "player-win":
-      return "You win!";
-    case "dealer-win":
-      return "Dealer wins.";
+function toneFor(tone?: BannerTone): { banner: string; delta: string } {
+  switch (tone) {
+    case "blackjack":
+      return {
+        banner: "bg-amber-400/90 text-amber-950",
+        delta: "text-amber-50 drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]",
+      };
+    case "win":
+      return {
+        banner: "bg-emerald-500/90 text-emerald-950",
+        delta: "text-emerald-50 drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]",
+      };
     case "push":
-      return "Push — it's a tie.";
+      return {
+        banner: "bg-amber-300/90 text-amber-950",
+        delta: "text-amber-900",
+      };
+    case "loss":
+      return {
+        banner: "bg-rose-600/90 text-rose-50",
+        delta: "text-rose-50 drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]",
+      };
     default:
-      return null;
-  }
-}
-
-function toneFor(status: GameStatus): string {
-  switch (status) {
-    case "player-blackjack":
-    case "dealer-bust":
-    case "player-win":
-      return "bg-emerald-500/90 text-emerald-950";
-    case "push":
-      return "bg-amber-300/90 text-amber-950";
-    case "player-bust":
-    case "dealer-blackjack":
-    case "dealer-win":
-      return "bg-rose-600/90 text-rose-50";
-    default:
-      return "bg-transparent";
+      return { banner: "bg-transparent", delta: "" };
   }
 }

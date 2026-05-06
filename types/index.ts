@@ -25,21 +25,33 @@ export type GameStatus =
   | "dealing"
   | "player-turn"
   | "dealer-turn"
-  | "player-bust"
-  | "dealer-bust"
-  | "player-win"
-  | "dealer-win"
-  | "push"
-  | "player-blackjack"
-  | "dealer-blackjack";
+  | "settled";
+
+export type HandStatus =
+  | "active"
+  | "standing"
+  | "busted"
+  | "doubled"
+  | "blackjack";
+
+export type HandResult = "win" | "loss" | "push" | "blackjack";
+
+export interface PlayerHand {
+  cards: Card[];
+  bet: number;
+  status: HandStatus;
+  result?: HandResult; // populated after settlement
+  fromSplit?: boolean;
+}
 
 export interface GameState {
   deck: Card[];
-  player: Card[];
+  hands: PlayerHand[];
+  activeHandIndex: number;
   dealer: Card[];
   status: GameStatus;
   holeHidden: boolean;
-  bet: number;
+  bet: number; // original bet placed at deal time
 }
 
 export interface UserStats {
@@ -57,7 +69,9 @@ export interface User {
   stats: UserStats;
 }
 
+export type TutorAction = "Hit" | "Stand" | "Double" | "Split";
+
 export interface TutorAdvice {
-  action: "Hit" | "Stand";
+  action: TutorAction;
   reason: string;
 }
