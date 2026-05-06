@@ -13,65 +13,44 @@ export function emptyState(): GameState {
   };
 }
 
-export function startNewHand(bet: number): GameState {
-  let deck = shuffle(createDeck());
-  let player: Card[] = [];
-  let dealer: Card[] = [];
-
-  // Standard deal: P, D, P, D
-  ({ deck, player, dealer } = dealOne(deck, player, dealer, "player"));
-  ({ deck, player, dealer } = dealOne(deck, player, dealer, "dealer"));
-  ({ deck, player, dealer } = dealOne(deck, player, dealer, "player"));
-  ({ deck, player, dealer } = dealOne(deck, player, dealer, "dealer"));
-
-  const playerBJ = isBlackjack(player);
-  const dealerBJ = isBlackjack(dealer);
-
-  if (playerBJ && dealerBJ) {
-    return { deck, player, dealer, status: "push", holeHidden: false, bet };
-  }
-  if (playerBJ) {
-    return {
-      deck,
-      player,
-      dealer,
-      status: "player-blackjack",
-      holeHidden: false,
-      bet,
-    };
-  }
-  if (dealerBJ) {
-    return {
-      deck,
-      player,
-      dealer,
-      status: "dealer-blackjack",
-      holeHidden: false,
-      bet,
-    };
-  }
-
+/** Initial state for an opening deal: shuffled deck, no cards yet, status='dealing'. */
+export function openingDeal(bet: number): GameState {
   return {
-    deck,
-    player,
-    dealer,
-    status: "player-turn",
+    deck: shuffle(createDeck()),
+    player: [],
+    dealer: [],
+    status: "dealing",
     holeHidden: true,
     bet,
   };
 }
 
-function dealOne(
-  deck: Card[],
-  player: Card[],
-  dealer: Card[],
+/** Draws one card from the deck and adds it to the given hand. */
+export function dealTo(
+  state: GameState,
   to: "player" | "dealer",
-): { deck: Card[]; player: Card[]; dealer: Card[] } {
-  const { card, rest } = draw(deck);
+): GameState {
+  const { card, rest } = draw(state.deck);
   if (to === "player") {
-    return { deck: rest, player: [...player, card], dealer };
+    return { ...state, deck: rest, player: [...state.player, card] };
   }
-  return { deck: rest, player, dealer: [...dealer, card] };
+  return { ...state, deck: rest, dealer: [...state.dealer, card] };
+}
+
+/** Called after the 4 opening cards are out. Resolves naturals or starts the player's turn. */
+export function finalizeOpening(state: GameState): GameState {
+  const playerBJ = isBlackjack(state.player);
+  const dealerBJ = isBlackjack(state.dealer);
+  if (playerBJ && dealerBJ) {
+    return { ...state, status: "push", holeHidden: false };
+  }
+  if (playerBJ) {
+    return { ...state, status: "player-blackjack", holeHidden: false };
+  }
+  if (dealerBJ) {
+    return { ...state, status: "dealer-blackjack", holeHidden: false };
+  }
+  return { ...state, status: "player-turn", holeHidden: true };
 }
 
 export function hit(state: GameState): GameState {
@@ -90,32 +69,26 @@ export function hit(state: GameState): GameState {
   return { ...state, deck: rest, player };
 }
 
-export function stand(state: GameState): GameState {
+/** Player stand: reveal the hole card and switch to dealer-turn. The page drives subsequent dealer hits on a timer. */
+export function revealHoleAndStand(state: GameState): GameState {
   if (state.status !== "player-turn") return state;
-
-  // Reveal hole card and play out the dealer's hand.
-  let deck = state.deck;
-  let dealer = state.dealer;
-
-  // Dealer hits while total < 17. Stands on any 17 — including soft 17 (per spec).
-  while (true) {
-    const { total } = handTotal(dealer);
-    if (total >= 17) break;
-    const { card, rest } = draw(deck);
-    dealer = [...dealer, card];
-    deck = rest;
-  }
-
-  return settle({
-    ...state,
-    deck,
-    dealer,
-    status: "dealer-turn",
-    holeHidden: false,
-  });
+  return { ...state, status: "dealer-turn", holeHidden: false };
 }
 
-function settle(state: GameState): GameState {
+/** Adds one card to the dealer (no status change). Called per timer tick during dealer-turn. */
+export function dealerHit(state: GameState): GameState {
+  if (state.status !== "dealer-turn") return state;
+  return dealTo(state, "dealer");
+}
+
+/** Dealer hits while total < 17. Stand on any 17 (incl. soft 17, per spec). */
+export function dealerShouldStop(state: GameState): boolean {
+  return handTotal(state.dealer).total >= 17;
+}
+
+/** Resolves a dealer-turn hand to its terminal status. Bet was already deducted at deal time. */
+export function settle(state: GameState): GameState {
+  if (state.status !== "dealer-turn") return state;
   if (isBust(state.dealer)) {
     return { ...state, status: "dealer-bust", holeHidden: false };
   }
@@ -132,9 +105,13 @@ function settle(state: GameState): GameState {
 
 export function isTerminal(state: GameState): boolean {
   return (
-    state.status !== "idle" &&
-    state.status !== "player-turn" &&
-    state.status !== "dealer-turn"
+    state.status === "player-bust" ||
+    state.status === "dealer-bust" ||
+    state.status === "player-win" ||
+    state.status === "dealer-win" ||
+    state.status === "push" ||
+    state.status === "player-blackjack" ||
+    state.status === "dealer-blackjack"
   );
 }
 
@@ -159,3 +136,6 @@ export function payoutFor(state: GameState): number {
       return 0;
   }
 }
+
+/** Used by Card type imports — re-export for convenience. */
+export type { Card };

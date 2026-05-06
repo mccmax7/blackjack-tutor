@@ -22,6 +22,7 @@ export interface Card {
 
 export type GameStatus =
   | "idle"
+  | "dealing"
   | "player-turn"
   | "dealer-turn"
   | "player-bust"

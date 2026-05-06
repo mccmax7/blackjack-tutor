@@ -31,13 +31,18 @@ export function Hand({ cards, hideSecond = false, label }: Props) {
       </div>
       <div className="flex gap-2 min-h-32">
         {cards.map((c, i) => (
-          <Card
+          <div
             key={`${c.rank}-${c.suit}-${i}`}
-            card={c}
-            faceDown={hideSecond && i === 1}
-          />
+            className="card-deal-in [transform-origin:center_center]"
+          >
+            <Card card={c} faceDown={hideSecond && i === 1} />
+          </div>
         ))}
-        {cards.length === 0 && <Card faceDown />}
+        {cards.length === 0 && (
+          <div className="opacity-50">
+            <Card faceDown />
+          </div>
+        )}
       </div>
       <div className="rounded-full bg-black/40 text-emerald-50 px-3 py-0.5 text-sm font-semibold">
         {hideSecond ? `Showing ${totalLabel}` : `Total: ${totalLabel}`}

@@ -12,8 +12,9 @@ export function ResultBanner({ status, delta }: Props) {
   }
   return (
     <div
+      key={status + (delta ?? 0)}
       role="status"
-      className={`h-14 grid place-items-center rounded-xl px-4 text-xl font-bold tracking-wide ${toneFor(status)}`}
+      className={`banner-pop-in h-14 grid place-items-center rounded-xl px-4 text-xl font-bold tracking-wide ${toneFor(status)}`}
     >
       <span className="flex items-baseline gap-3">
         <span>{message}</span>
