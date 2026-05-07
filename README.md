@@ -2,7 +2,7 @@
 
 A web-based blackjack practice game with a built-in **basic-strategy tutor**. Play hands, get instant feedback on whether your decision matches optimal basic strategy, and track your bankroll over time.
 
-🎲 **Live demo:** _coming soon — deploy via Vercel_
+🎲 **Live demo:** https://blackjack-tutor.vercel.app
 
 ## Features
 
