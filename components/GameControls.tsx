@@ -1,7 +1,6 @@
-type Mode = "play" | "deal" | "none";
-
 interface Props {
-  mode: Mode;
+  canHit: boolean;
+  canStand: boolean;
   canDeal: boolean;
   canDouble: boolean;
   canSplit: boolean;
@@ -14,7 +13,8 @@ interface Props {
 }
 
 export function GameControls({
-  mode,
+  canHit,
+  canStand,
   canDeal,
   canDouble,
   canSplit,
@@ -25,105 +25,76 @@ export function GameControls({
   onDouble,
   onSplit,
 }: Props) {
-  if (mode === "none") return null;
-
-  const showSecondary = mode === "play" && (canDouble || canSplit);
-
   return (
-    <div className="flex flex-col items-center gap-3">
-      {showSecondary && (
-        <div className="flex gap-2 banner-pop-in" key={`${canDouble}-${canSplit}`}>
-          {canDouble && (
-            <SecondaryButton
-              onClick={onDouble}
-              title="Double down — double your bet, take exactly one more card."
-            >
-              Double
-            </SecondaryButton>
-          )}
-          {canSplit && (
-            <SecondaryButton
-              onClick={onSplit}
-              title="Split — turn your pair into two hands."
-            >
-              Split
-            </SecondaryButton>
-          )}
-        </div>
-      )}
-      <div className="flex gap-3">
-        {mode === "play" ? (
-          <>
-            <PrimaryButton onClick={onHit}>Hit</PrimaryButton>
-            <PrimaryButton onClick={onStand}>Stand</PrimaryButton>
-          </>
-        ) : (
-          <GoldButton onClick={onDeal} disabled={!canDeal}>
-            Deal {bet > 0 ? `$${bet}` : ""}
-          </GoldButton>
-        )}
-      </div>
+    <div className="flex items-center justify-center gap-3 flex-wrap">
+      <ActionButton onClick={onHit} disabled={!canHit} variant="primary">
+        Hit
+      </ActionButton>
+      <ActionButton onClick={onStand} disabled={!canStand} variant="primary">
+        Stand
+      </ActionButton>
+      <ActionButton onClick={onDeal} disabled={!canDeal} variant="gold">
+        Deal {bet > 0 ? `$${bet}` : ""}
+      </ActionButton>
+      <span
+        aria-hidden
+        className="hidden sm:block w-px h-8 bg-emerald-200/20 mx-2"
+      />
+      <ActionButton
+        onClick={onDouble}
+        disabled={!canDouble}
+        variant="accent"
+        title="Double down — double your bet, take exactly one more card."
+      >
+        Double
+      </ActionButton>
+      <ActionButton
+        onClick={onSplit}
+        disabled={!canSplit}
+        variant="accent"
+        title="Split — turn your pair into two hands."
+      >
+        Split
+      </ActionButton>
     </div>
   );
 }
 
-function PrimaryButton({
+function ActionButton({
   children,
   onClick,
   disabled,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="px-7 py-2.5 rounded-full bg-emerald-700 text-white font-semibold tracking-wide shadow-chip hover:bg-emerald-600 active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed"
-    >
-      {children}
-    </button>
-  );
-}
-
-function SecondaryButton({
-  children,
-  onClick,
+  variant,
   title,
 }: {
   children: React.ReactNode;
   onClick: () => void;
+  disabled?: boolean;
+  variant: "primary" | "gold" | "accent";
   title?: string;
 }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className="px-4 py-1.5 rounded-full bg-indigo-600/90 text-white font-medium text-sm shadow-chip ring-1 ring-indigo-400/50 hover:bg-indigo-500 active:scale-[0.97] transition"
-    >
-      {children}
-    </button>
-  );
-}
-
-function GoldButton({
-  children,
-  onClick,
-  disabled,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
+  const base =
+    "rounded-full font-semibold tracking-wide shadow-chip transition disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98]";
+  let palette: string;
+  let size: string;
+  if (variant === "gold") {
+    palette = "bg-chip-gold text-slate-900 hover:bg-yellow-300";
+    size = "px-7 py-2.5";
+  } else if (variant === "accent") {
+    palette =
+      "bg-indigo-600/90 text-white hover:bg-indigo-500 ring-1 ring-indigo-400/50 text-sm font-medium";
+    size = "px-4 py-1.5";
+  } else {
+    palette = "bg-emerald-700 text-white hover:bg-emerald-600";
+    size = "px-7 py-2.5";
+  }
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="px-7 py-2.5 rounded-full bg-chip-gold text-slate-900 font-semibold tracking-wide shadow-chip hover:bg-yellow-300 active:scale-[0.98] transition disabled:opacity-40 disabled:cursor-not-allowed"
+      title={title}
+      className={`${base} ${palette} ${size}`}
     >
       {children}
     </button>
