@@ -446,8 +446,13 @@ export default function PlayPage() {
             </div>
           )}
           <GameControls
-            canHit={playerTurn}
-            canStand={playerTurn}
+            mode={
+              playerTurn
+                ? "play"
+                : (idle || terminal) && !broke
+                  ? "deal"
+                  : "none"
+            }
             canDeal={canDeal && !dealing}
             canDouble={canDouble}
             canSplit={canSplit}
